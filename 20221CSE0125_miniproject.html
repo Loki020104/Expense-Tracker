@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="expenseTrackerApp">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Expense Tracker</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular-route.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-image: url('https://www.w3schools.com/w3images/forestbridge.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #4CAF50;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+        button:hover {
+            background-color: #388E3C;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            width: 100%;
+        }
+        li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .total {
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+            text-align: right;
+            width: 100%;
+        }
+        .back-btn {
+            background-color: #888;
+            margin-top: 10px;
+        }
+        .back-btn:hover {
+            background-color: #555;
+        }
+        .edit-input {
+            width: 60px;
+            padding: 5px;
+            font-size: 14px;
+            margin-left: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .expense-desc {
+            flex: 1;
+        }
+        .expense-amount {
+            width: 100px;
+            text-align: right;
+        }
+        .category-label {
+            font-weight: bold;
+            margin-top: 15px;
+            width: 100%;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            color: #4CAF50;
+        }
+        .image-above-button {
+            display: block;
+            margin: 0 auto 15px auto;
+            max-width: 150px;
+            max-height: 150px;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body ng-controller="MainController">
+
+<div ng-view></div>
+
+<script type="text/ng-template" id="home.html">
+    <div class="container">
+        <img class="image-above-button" src="https://cdn-icons-png.flaticon.com/512/1946/1946433.png" alt="Home Icon" />
+        <h1>Expense Tracker</h1>
+        <button ng-click="start()">Let's Start</button>
+    </div>
+</script>
+
+<script type="text/ng-template" id="categories.html">
+    <div class="container">
+        <h2>Select Expense Category</h2>
+        <div>
+            <button ng-click="goToCategory('Monthly')">
+                <img class="image-above-button" src="https://cdn-icons-png.flaticon.com/512/2331/2331941.png" alt="Monthly Expense" />
+                Monthly Expense
+            </button>
+            <button ng-click="goToCategory('Weekly')">
+                <img class="image-above-button" src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="Weekly Expense" />
+                Weekly Expense
+            </button>
+            <button ng-click="goToCategory('Yearly')">
+                <img class="image-above-button" src="https://cdn-icons-png.flaticon.com/512/2921/2921221.png" alt="Yearly Expense" />
+                Yearly Expense
+            </button>
+        </div>
+        <button class="back-btn" ng-click="goBack()">Back</button>
+    </div>
+</script>
+
+<script type="text/ng-template" id="expense.html">
+    <div class="container">
+        <h2>{{category}} Expenses</h2>
+        <form ng-submit="addExpense()">
+            <input type="text" placeholder="Description" ng-model="newExpense.description" required />
+            <input type="number" placeholder="Amount (₹)" ng-model="newExpense.amount" min="0.01" step="0.01" required />
+            <button type="submit">Add Expense</button>
+        </form>
+        <ul>
+            <li ng-repeat="expense in expenses track by $index">
+                <span class="expense-desc">{{expense.description}}</span>
+                <span class="expense-amount">₹ {{expense.amount | number:2}}</span>
+                <button style="background:#e74c3c; width: 70px; font-size: 12px;" ng-click="removeExpense($index)">Remove</button>
+            </li>
+        </ul>
+        <div class="total">Total: ₹ {{getTotal() | number:2}}</div>
+        <button ng-click="goFinal()">Finalize</button>
+        <button class="back-btn" ng-click="goBack()">Back</button>
+    </div>
+</script>
+
+<script type="text/ng-template" id="final.html">
+    <div class="container">
+        <h2>Finalized Expenses</h2>
+        <div ng-repeat="(cat, items) in categorizedExpenses">
+            <div class="category-label">{{cat}} Expenses</div>
+            <ul>
+                <li ng-repeat="expense in items track by $index">
+                    <input type="text" ng-model="expense.description" class="edit-input" />
+                    <input type="number" min="0.01" step="0.01" ng-model="expense.amount" class="edit-input" />
+                    <button style="background:#e74c3c; width: 70px; font-size: 12px;" ng-click="removeFinalExpense(cat, $index)">Remove</button>
+                </li>
+            </ul>
+        </div>
+        <div class="total">Grand Total: ₹ {{getGrandTotal() | number:2}}</div>
+        <button ng-click="goCategories()">Back to Categories</button>
+    </div>
+</script>
+
+<script>
+    angular.module('expenseTrackerApp', ['ngRoute'])
+    .config(['$routeProvider', function($routeProvider) {
+        $routeProvider
+        .when('/', {
+            templateUrl: 'home.html',
+            controller: 'HomeController'
+        })
+        .when('/categories', {
+            templateUrl: 'categories.html',
+            controller: 'CategoriesController'
+        })
+        .when('/monthly', {
+            templateUrl: 'expense.html',
+            controller: 'ExpenseController',
+            resolve: { category: () => 'Monthly' }
+        })
+        .when('/weekly', {
+            templateUrl: 'expense.html',
+            controller: 'ExpenseController',
+            resolve: { category: () => 'Weekly' }
+        })
+        .when('/yearly', {
+            templateUrl: 'expense.html',
+            controller: 'ExpenseController',
+            resolve: { category: () => 'Yearly' }
+        })
+        .when('/final', {
+            templateUrl: 'final.html',
+            controller: 'FinalController'
+        })
+        .otherwise({ redirectTo: '/' });
+    }])
+    .controller('MainController', ['$scope', function($scope) {}])
+    .controller('HomeController', ['$scope', '$location', function($scope, $location) {
+        $scope.start = function() {
+            $location.path('/categories');
+        };
+    }])
+    .controller('CategoriesController', ['$scope', '$location', function($scope, $location) {
+        $scope.goToCategory = function(category) {
+            $location.path('/' + category.toLowerCase());
+        };
+        $scope.goBack = function() {
+            $location.path('/');
+        };
+    }])
+    .controller('ExpenseController', ['$scope', '$location', 'category', function($scope, $location, category) {
+        $scope.category = category;
+        $scope.expenses = JSON.parse(sessionStorage.getItem(category + 'Expenses')) || [];
+        $scope.newExpense = {};
+
+        $scope.addExpense = function() {
+            if (!$scope.newExpense.description || !$scope.newExpense.amount || $scope.newExpense.amount <= 0) return;
+            $scope.expenses.push({
+                description: $scope.newExpense.description,
+                amount: parseFloat($scope.newExpense.amount),
+                category: $scope.category
+            });
+            $scope.newExpense = {};
+            sessionStorage.setItem(category + 'Expenses', JSON.stringify($scope.expenses));
+        };
+
+        $scope.removeExpense = function(index) {
+            $scope.expenses.splice(index, 1);
+            sessionStorage.setItem(category + 'Expenses', JSON.stringify($scope.expenses));
+        };
+
+        $scope.getTotal = function() {
+            return $scope.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        };
+
+        $scope.goFinal = function() {
+            $location.path('/final');
+        };
+
+        $scope.goBack = function() {
+            $location.path('/categories');
+        };
+    }])
+    .controller('FinalController', ['$scope', '$location', function($scope, $location) {
+        const categories = ['Monthly', 'Weekly', 'Yearly'];
+        $scope.categorizedExpenses = {};
+        categories.forEach(cat => {
+            let exps = JSON.parse(sessionStorage.getItem(cat + 'Expenses')) || [];
+            $scope.categorizedExpenses[cat] = exps;
+        });
+
+        $scope.getGrandTotal = function() {
+            let total = 0;
+            angular.forEach($scope.categorizedExpenses, function(expenses) {
+                expenses.forEach(exp => {
+                    total += parseFloat(exp.amount);
+                });
+            });
+            return total;
+        };
+
+        $scope.removeFinalExpense = function(category, index) {
+            $scope.categorizedExpenses[category].splice(index, 1);
+            sessionStorage.setItem(category + 'Expenses', JSON.stringify($scope.categorizedExpenses[category]));
+        };
+
+        $scope.$watch('categorizedExpenses', function(newVal) {
+            angular.forEach(newVal, function(expenses, category) {
+                sessionStorage.setItem(category + 'Expenses', JSON.stringify(expenses));
+            });
+        }, true);
+
+        $scope.goCategories = function() {
+            $location.path('/categories');
+        };
+    }]);
+</script>
+
+</body>
+</html>
